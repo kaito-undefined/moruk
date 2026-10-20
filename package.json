@@ -1,0 +1,17 @@
+{
+  "name": "moruk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "/output/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "electron": "^44.9.1",
+    "openai": "^7.39.0"
+  }
+}

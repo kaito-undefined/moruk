@@ -14,7 +14,8 @@
   "type": "commonjs",
   "dependencies": {
     "electron": "^44.9.1",
-    "openai": "^7.39.0"
+    "openai": "^7.39.0",
+    "speaker": "^0.5.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

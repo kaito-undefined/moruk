@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
+import { TTS } from "../services/TTS.js";
 
 type RouterResponse = {
     should_execute: boolean;
@@ -23,13 +24,13 @@ const MODELS = {
 let tools: OpenAI.Chat.Completions.ChatCompletionFunctionTool[] = [];
 let functions = new Map<string, (args: any) => any>();
 
-async function router(prompt: string): Promise<boolean>{
+async function router(prompt: string): Promise<RouterResponse>{
     const response = await client.chat.completions.create({
         model: MODELS.router,
         messages: [
             {
                 role: 'system',
-                content: 'You are a router model that decides whether to route the prompt to the executer model or not. If the prompt requires writing code, executing code, creating files, or complex task planning, return should_execute as true. Otherwise, return should_execute as false and provide a reply answering the prompt.'
+                content: 'You are a router model that decides whether to route the prompt to the executer model or not. If the prompt requires writing code, executing code, creating files, or complex task planning, return should_execute as true. Otherwise, return should_execute as false and provide a reply answering the prompt. You are also an expert in Turkish language and culture.'
             },
             { role: 'user', content: prompt }
         ],
@@ -66,11 +67,13 @@ async function router(prompt: string): Promise<boolean>{
         const rawResponse = response.choices[0].message?.content;
         if (!rawResponse) throw new Error('No content in router response');
         const routerResponse: RouterResponse = JSON.parse(rawResponse);
-        console.log(`Router response: ${JSON.stringify(routerResponse)}`);
-        return routerResponse.should_execute;
+        return routerResponse;
     }catch(error){
         console.error(`Error parsing router response: ${error}`);
-        return false;
+        return {
+            should_execute: false,
+            reply: `Error parsing router response: ${error}`
+        }
     }
 }
 
@@ -78,7 +81,7 @@ async function executer(prompt: string): Promise<string | null>{
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =  [
         {
             role: 'system',
-            content: 'You are an expert in executing code and solving programming problems.'
+            content: 'You are an expert in executing code and solving programming problems. You are also an expert in Turkish language and culture.'
         },
         { role: 'user', content: prompt }
     ];
@@ -131,17 +134,19 @@ async function executer(prompt: string): Promise<string | null>{
     }
 }
 
-async function handlePrompt(prompt: string){
+async function handlePrompt(prompt: string): Promise<string>{
     console.log(`Received prompt: ${prompt}`);
-    const shouldExecute = await router(prompt);
-    if(shouldExecute){
+    const routerResponse = await router(prompt);
+    if(routerResponse.should_execute){
         console.log('Routing to executer...');
         const reply = await executer(prompt);
         if(reply){
-            console.log(reply);
+            return reply;
         } else {
-            console.log('No reply from executer.');
+            return 'No reply from executer.';
         }
+    } else {
+        return routerResponse.reply;
     }
 }
 
@@ -158,9 +163,14 @@ async function loadTools(){
 }
 
 async function run(){
+    const tts = new TTS();
     await loadTools();
-    await handlePrompt("Hi, how are you?");
-    await handlePrompt("Write a function that calculates the factorial of a number in JavaScript.");
+    const response1 = await handlePrompt("Merhaba, nasılsın?");
+    console.log(response1);
+    await tts.speak(response1);
+    const response2 = await handlePrompt("JavaScript'te bir faktoriyel fonksiyonun nasıl tanımlandığını ve çağrıldığını gösteren bir örnek ver.");
+    console.log(response2);
+    await tts.speak(response2);
 }
 
 run();

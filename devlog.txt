@@ -1,3 +1,0 @@
-20.10.2026:
-npx tsc --init
-npm install -D typescript @types/node tsx

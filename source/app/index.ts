@@ -2,7 +2,8 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
-import { TTS } from "../services/TTS.js";
+import { TTS } from "../services/TTS";
+import dns from "dns/promises"
 
 type RouterResponse = {
     should_execute: boolean;
@@ -23,6 +24,21 @@ const MODELS = {
 
 let tools: OpenAI.Chat.Completions.ChatCompletionFunctionTool[] = [];
 let functions = new Map<string, (args: any) => any>();
+
+async function checkInternetConnection(): Promise<boolean> {
+    try {
+        await dns.lookup('dns.msftncsi.com');
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+async function speakWithTTS(text: string): Promise<void>{
+    const tts = new TTS();
+    const isConnected = await checkInternetConnection();
+    await tts.speak(text, isConnected ? 'edge' : 'piper');
+}
 
 async function router(prompt: string): Promise<RouterResponse>{
     const response = await client.chat.completions.create({
@@ -163,14 +179,13 @@ async function loadTools(){
 }
 
 async function run(){
-    const tts = new TTS();
     await loadTools();
     const response1 = await handlePrompt("Merhaba, nasılsın?");
     console.log(response1);
-    await tts.speak(response1);
+    await speakWithTTS(response1);
     const response2 = await handlePrompt("JavaScript'te bir faktoriyel fonksiyonun nasıl tanımlandığını ve çağrıldığını gösteren bir örnek ver.");
     console.log(response2);
-    await tts.speak(response2);
+    await speakWithTTS(response2);
 }
 
 run();

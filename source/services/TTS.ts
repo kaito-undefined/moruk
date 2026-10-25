@@ -27,7 +27,7 @@ export class TTS {
         if(!fs.existsSync(this.tempAudioDir)) fs.mkdirSync(this.tempAudioDir, { recursive: true });
     }
 
-    public async speak(text: string, provider: Provider, cleanText: boolean = true): Promise<void>{
+    public async speak(text: string, provider: Provider, cleanText: boolean = true, routeToOtherProvider: Provider | null = null): Promise<void>{
         const textToSpeak = cleanText ? cleanTextForTTS(text) : text;
         const timestamp = Date.now();
         if(provider === 'edge'){
@@ -35,6 +35,9 @@ export class TTS {
             try{
                 await this.edgeTTS.ttsPromise(textToSpeak, filePath);
                 await sound.play(filePath);
+            }catch(error){
+                console.error(`Error generating or playing ${provider} audio: ${error}`);
+                if(routeToOtherProvider) await this.speak(text, routeToOtherProvider, cleanText, null);
             }finally{
                 if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
             }
@@ -43,6 +46,9 @@ export class TTS {
             try{
                 await this.generatePiperAudio(textToSpeak, filePath);
                 await sound.play(filePath);
+            }catch(error){
+                console.error(`Error generating or playing ${provider} audio: ${error}`);
+                if(routeToOtherProvider) await this.speak(text, routeToOtherProvider, cleanText, null);
             }finally{
                 if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
             }

@@ -3,7 +3,9 @@ import fs from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import { TTS } from "../services/TTS";
-import dns from "dns/promises"
+import dns from "dns/promises";
+import { modelsData } from "../services/modelsData";
+import { VRAMUsage } from "../services/VRAMUsage";
 
 type RouterResponse = {
     should_execute: boolean;
@@ -37,7 +39,7 @@ async function checkInternetConnection(): Promise<boolean> {
 async function speakWithTTS(text: string): Promise<void>{
     const tts = new TTS();
     const isConnected = await checkInternetConnection();
-    await tts.speak(text, isConnected ? 'edge' : 'piper');
+    await tts.speak(text, isConnected ? 'edge' : 'piper', true, isConnected ? 'piper' : null);
 }
 
 async function router(prompt: string): Promise<RouterResponse>{
@@ -186,6 +188,8 @@ async function run(){
     const response2 = await handlePrompt("JavaScript'te bir faktoriyel fonksiyonun nasıl tanımlandığını ve çağrıldığını gösteren bir örnek ver.");
     console.log(response2);
     await speakWithTTS(response2);
+    console.log(await modelsData());
+    console.log(await VRAMUsage());
 }
 
 run();
